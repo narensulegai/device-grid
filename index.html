@@ -30,7 +30,7 @@
         min-width: 800px;
         width: 70%;
         background: white;
-        box-shadow: 0 3px 2px 1px #dbdbdb;
+        box-shadow: 0 3px 2px 1px #dbdbdb; 
         margin: auto;
     }
 
@@ -38,7 +38,7 @@
         position: relative;
     }
 
-    .device .status.available::before {
+    .device .available::before {
         content: '';
         position: absolute;
         left: 0;
@@ -53,12 +53,6 @@
     table.device {
         width: 100%;
         border-collapse: collapse;
-        overflow: scroll;
-    }
-
-    .device td {
-        padding-left: 1.2rem;
-        overflow: hidden;
     }
 
     .device tbody td {
@@ -94,9 +88,12 @@
 
     .download-selected {
         all: unset;
-        padding-left: 2rem;
         cursor: pointer;
         outline: revert;
+    }
+
+    .device td, .medium-padding-left {
+        padding-left: 2rem;
     }
 
     .download-selected::before {
@@ -116,19 +113,13 @@
         margin-left: 1rem;
     }
 
-    .select-all {
-        margin-left: 1.2rem;
-    }
-
 </style>
 
 <div class="container">
-
-    <div class="controls">
+    <div class="controls medium-padding-left">
         <input type="checkbox" class="select-all">
-        <span class="select-count"></span>
-        &nbsp;
-        <button class="download-selected" disabled>Download Selected</button>
+        <div class="select-count"></div>
+        <button class="download-selected medium-padding-left" disabled>Download Selected</button>
     </div>
 
     <table class="device">
@@ -141,8 +132,7 @@
             <td>Status</td>
         </tr>
         </thead>
-        <tbody>
-        </tbody>
+        <tbody></tbody>
     </table>
 </div>
 
@@ -192,6 +182,11 @@
         }
     ]
 
+    const tableBodyEle = document.querySelector('.device tbody');
+    const selectCountEle = document.querySelector('.select-count');
+    const selectAllEle = document.querySelector('.select-all');
+    const downloadSelectedEle = document.querySelector('.download-selected');
+
     const createRowElement = (name, device, path, status, onSelect) => {
         const deviceRowEle = document.getElementById('device-row').content.cloneNode(true)
         deviceRowEle.querySelector('.checkbox input').addEventListener('change', onSelect)
@@ -207,40 +202,36 @@
         }
         return deviceRowEle
     }
-    const tableBodyEle = document.querySelector('.device tbody');
-    const selectCountEle = document.querySelector('.select-count');
-    const selectAllEle = document.querySelector('.select-all');
-    const downloadSelected = document.querySelector('.download-selected');
 
     selectAllEle.addEventListener('click', () => {
-        const rowEle = [...document.querySelectorAll('.checkbox input')];
+        const rowEle = [...document.querySelectorAll('.device input')];
         const numOfSelectedRows = rowEle.filter(e => e.checked).length
         const nextState = numOfSelectedRows !== rowEle.length
         rowEle.forEach(e => e.checked = nextState);
         onSelectChange()
     })
 
-    downloadSelected.addEventListener('click', () => {
-        alert([...document.querySelectorAll('tr:has(.available):has(input:checked)')].map(e => {
+    downloadSelectedEle.addEventListener('click', () => {
+        alert([...document.querySelectorAll('.device tr:has(.available):has(input:checked)')].map(e => {
             return `${e.querySelector('.device').textContent} ${e.querySelector('.path').textContent}`
         }).join('\n'))
     })
 
     const onSelectChange = () => {
-        const rowEle = [...document.querySelectorAll('.checkbox input')];
-        const numOfSelectedRows = rowEle.filter(e => e.checked).length
-        selectCountEle.textContent = numOfSelectedRows > 0 ? `Selected ${numOfSelectedRows}` : 'None Selected'
+        const numOfSelectedRows = document.querySelectorAll('.device input:checked').length
+        selectCountEle.textContent = numOfSelectedRows > 0
+            ? `Selected ${numOfSelectedRows}`
+            : 'None Selected'
         selectAllEle.indeterminate = false
-        if (rowEle.length === numOfSelectedRows) {
+        if (devices.length === numOfSelectedRows) {
             selectAllEle.checked = true
         } else if (numOfSelectedRows === 0) {
             selectAllEle.checked = false
         } else {
             selectAllEle.indeterminate = true
         }
-        const downloadable = rowEle.filter(e => e.checked &&
-            e.closest('tr').querySelector('.available') !== null).length
-        downloadSelected.disabled = downloadable === 0
+        const downloadable = document.querySelectorAll('.device tr:has(.available):has(input:checked)').length
+        downloadSelectedEle.disabled = downloadable === 0
     }
 
     devices.forEach(device => {
