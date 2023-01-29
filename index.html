@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Device selection grid</title>
+</head>
+<body>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    input {
+        margin: 0;
+    }
+
+    body {
+        font-family: sans-serif;
+        font-weight: lighter;
+        margin: 0;
+        padding: 4rem;
+        background: #f1f1f1;
+    }
+
+    .container {
+        min-width: 800px;
+        width: 70%;
+        background: white;
+        box-shadow: 0 3px 2px 1px #dbdbdb;
+        margin: auto;
+    }
+
+    .device .status {
+        position: relative;
+    }
+
+    .device .status.available::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0.5rem;
+        display: block;
+        height: 1rem;
+        width: 1rem;
+        border-radius: 50%;
+        background: #95e466;
+    }
+
+    table.device {
+        width: 100%;
+        border-collapse: collapse;
+        overflow: scroll;
+    }
+
+    .device td {
+        padding-left: 1.2rem;
+        overflow: hidden;
+    }
+
+    .device tbody td {
+        height: 2rem;
+        font-weight: normal;
+        font-size: 0.8rem;
+    }
+
+    .device thead td {
+        vertical-align: bottom;
+        line-height: 2rem;
+        height: 2.4rem;
+    }
+
+    .device tr {
+        border-top: 1px solid #d3d3d3;
+    }
+
+    .device tr:has(input:checked) {
+        background: #eaeaea;
+    }
+
+    :is(.device tr, .device tr:has(input:checked)):hover {
+        background: #f5f5f5;
+    }
+
+    .controls {
+        display: flex;
+        font-size: 1.2rem;
+        height: 3rem;
+        align-items: center;
+    }
+
+    .download-selected {
+        all: unset;
+        padding-left: 2rem;
+        cursor: pointer;
+        outline: revert;
+    }
+
+    .download-selected::before {
+        content: "";
+        background: url("https://cdn-icons-png.flaticon.com/16/9502/9502824.png") no-repeat;
+        height: 1rem;
+        width: 1rem;
+        margin-right: 0.5rem;
+        display: inline-block;
+    }
+
+    .download-selected[disabled] {
+        display: none;
+    }
+
+    .select-count {
+        margin-left: 1rem;
+    }
+
+    .select-all {
+        margin-left: 1.2rem;
+    }
+
+</style>
+
+<div class="container">
+
+    <div class="controls">
+        <input type="checkbox" class="select-all">
+        <span class="select-count"></span>
+        &nbsp;
+        <button class="download-selected" disabled>Download Selected</button>
+    </div>
+
+    <table class="device">
+        <thead>
+        <tr>
+            <td></td>
+            <td>Name</td>
+            <td>Device</td>
+            <td>Path</td>
+            <td>Status</td>
+        </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>
+
+<template id="device-row">
+    <tr>
+        <td class="checkbox">
+            <input type="checkbox" title="Select this device">
+        </td>
+        <td class="name"></td>
+        <td class="device"></td>
+        <td class="path"></td>
+        <td class="status"></td>
+    </tr>
+</template>
+
+<script>
+    const devices = [
+        {
+            name: 'smss.exe',
+            device: 'Stark',
+            path: '\\Device\\HarddiskVolume2\\Windows\\System32\\smss.exe',
+            status: 'scheduled'
+        },
+        {
+            name: 'netsh.exe',
+            device: 'Targaryen',
+            path: '\\Device\\HarddiskVolume2\\Windows\\System32\\netsh.exe',
+            status: 'available'
+        },
+        {
+            name: 'uxtheme.dll',
+            device: 'Lannister',
+            path: '\\Device\\HarddiskVolume1\\Windows\\System32\\uxtheme.dll',
+            status: 'available'
+        },
+        {
+            name: 'cryptbase.dll',
+            device: 'Martell',
+            path: '\\Device\\HarddiskVolume1\\Windows\\System32\\cryptbase.dll',
+            status: 'scheduled'
+        },
+        {
+            name: '7za.exe',
+            device: 'Baratheon',
+            path: '\\Device\\HarddiskVolume1\\temp\\7za.exe',
+            status: 'scheduled'
+        }
+    ]
+
+    const createRowElement = (name, device, path, status, onSelect) => {
+        const deviceRowEle = document.getElementById('device-row').content.cloneNode(true)
+        deviceRowEle.querySelector('.checkbox input').addEventListener('change', onSelect)
+        deviceRowEle.querySelector('.name').textContent = name
+        deviceRowEle.querySelector('.device').textContent = device
+        deviceRowEle.querySelector('.path').textContent = path
+        const statusEle = deviceRowEle.querySelector('.status')
+        if (status === 'available') {
+            statusEle.classList.add('available')
+            statusEle.textContent = 'Available'
+        } else {
+            statusEle.textContent = 'Unavailable'
+        }
+        return deviceRowEle
+    }
+    const tableBodyEle = document.querySelector('.device tbody');
+    const selectCountEle = document.querySelector('.select-count');
+    const selectAllEle = document.querySelector('.select-all');
+    const downloadSelected = document.querySelector('.download-selected');
+
+    selectAllEle.addEventListener('click', () => {
+        const rowEle = [...document.querySelectorAll('.checkbox input')];
+        const numOfSelectedRows = rowEle.filter(e => e.checked).length
+        const nextState = numOfSelectedRows !== rowEle.length
+        rowEle.forEach(e => e.checked = nextState);
+        onSelectChange()
+    })
+
+    downloadSelected.addEventListener('click', () => {
+        alert([...document.querySelectorAll('tr:has(.available):has(input:checked)')].map(e => {
+            return `${e.querySelector('.device').textContent} ${e.querySelector('.path').textContent}`
+        }).join('\n'))
+    })
+
+    const onSelectChange = () => {
+        const rowEle = [...document.querySelectorAll('.checkbox input')];
+        const numOfSelectedRows = rowEle.filter(e => e.checked).length
+        selectCountEle.textContent = numOfSelectedRows > 0 ? `Selected ${numOfSelectedRows}` : 'None Selected'
+        selectAllEle.indeterminate = false
+        if (rowEle.length === numOfSelectedRows) {
+            selectAllEle.checked = true
+        } else if (numOfSelectedRows === 0) {
+            selectAllEle.checked = false
+        } else {
+            selectAllEle.indeterminate = true
+        }
+        const downloadable = rowEle.filter(e => e.checked &&
+            e.closest('tr').querySelector('.available') !== null).length
+        downloadSelected.disabled = downloadable === 0
+    }
+
+    devices.forEach(device => {
+        const rowEle = createRowElement(device.name, device.device, device.path, device.status, onSelectChange)
+        tableBodyEle.append(rowEle)
+    })
+
+    onSelectChange()
+
+</script>
+
+
+</body>
+</html>
